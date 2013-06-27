@@ -1,0 +1,107 @@
+<?php
+
+/**
+ * @file
+ * leavenotice.module
+ * LeaveNotice is intended to set up a site wide exit script to alert users when they are 
+ * leaving the site
+ */
+/**
+ * Implements hook_init().
+ */
+ 
+function leavenotice_init() {
+  $lib = leavenotice_get_library();
+  if ($lib) {
+    // add library
+    drupal_add_js($lib);
+    drupal_add_css($css, array('type' => 'inline', 'media' => $media_query));
+
+  }
+}
+
+/**
+ * Wrapper to get the library so it works with install profiles.
+ */
+function leavenotice_get_library() {
+  if (function_exists('libraries_get_libraries')) {
+    $libraries = libraries_get_libraries();
+    if (isset($libraries['leavenotice'])) {
+      return $libraries['leavenotice'] .'/jquery.leaveNotice.min.js';
+    }
+  }
+  else {
+    $directory = 'libraries';
+    $profile = drupal_get_profile();
+    $config = conf_path();
+    $lib = $config . 'jquery.leaveNotice.min.js';
+    // look in install profile
+    if (file_exists("profiles/$profile/$directory/$lib")) {
+      return "profiles/$profile/$directory/$lib";
+    }
+    // look in sites all
+    // Always search sites/all/*.
+    $searchdir[] = 'sites/all/' . $directory ;
+    if (file_exists("sites/all/$directory/$lib")) {
+      return "sites/all/$directory/$lib";
+    }
+    // look in a local domain as last resort
+    // Also search sites/<domain>/*.
+    if (file_exists("$config/$directory/$lib")) {
+      return "$config/$directory/$lib";
+    }
+  }
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function leavenotice_requirements($phase) {
+  // Create an array to hold leavenotice requirements
+  $requirements = array();
+
+  // Check requirements during the runtime phase
+  if ($phase == 'runtime') {
+    // Check if the leavenotice jQuery plugin library is installed
+    if (($library = libraries_detect('leavenotice')) && !empty($library['installed'])) {
+      $requirements['leavenotice_library'] = array(
+        'title' => t('leaveNotice jQuery plugin'),
+        'value' => t('Installed'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['leavenotice_library'] = array(
+        'title' => t('leaveNotice jQuery plugin'),
+        'value' => t('Not installed'),
+        'description' => $library['error message'],
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+
+/**
+ * Implements hook_libraries_info()
+ */
+function leavenotice_libraries_info() {
+  $libraries = array();
+  $libraries['leavenotice'] = array(
+    'name'              => 'leaveNotice',
+    'vendor url'        => 'http://rewdy.com/projects/view/leavenotice/',
+    'download url'      => 'https://github.com/rewdy/leaveNotice',
+    'path'              => 'js',
+    'files'   => array(
+      'js' => array(
+        'jquery.leaveNotice.min.js',
+      ),
+      'css' => array(
+        'jquery.leaveNotice.css',
+      )
+    ),
+  );
+  return $libraries;
+}
