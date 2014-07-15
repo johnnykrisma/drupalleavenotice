@@ -8,94 +8,37 @@
  */
 
 // leavenotice global variables
-define('LEAVENOTICE_URL', 'http://rewdy.com/projects/view/leavenotice/');
-define('LEAVENOTICE_SITENAME', 'My Site');
-define('LEAVENOTICE_PRELINKMESSAGE', '');
-define('LEAVENOTICE_NEWWINDOW', '');
-define('LEAVENOTICE_LINKSTRING', '');
-define('LEAVENOTICE_TIMEOUT', '');
-define('LEAVENOTICE_OVERLAYID', '');
-define('LEAVENOTICE_MESSAGEBOXID', '');
-define('LEAVENOTICE_MESSAGEHOLDERID', '');
-define('LEAVENOTICE_OVERLAYALPHA', '');
+define('leavenotice_url', 'http://rewdy.com/projects/view/leavenotice/');
+define('leavenotice_sitename', 'my site');
+define('leavenotice_css_selector', 'body');
+define('leavenotice_newwindow', '');
+define('leavenotice_exitmessage', '');
+define('leavenotice_linkstring', '');
+define('leavenotice_timeout', '');
+define('leavenotice_overlayid', '');
+define('leavenotice_messageboxid', '');
+define('leavenotice_messageholderid', '');
+define('leavenotice_overlayalpha', '');
 
 /**
- * Implements hook_init().
+ * Implements hook_page_build().
  */
-function leavenotice_init() {
-  $lib = leavenotice_get_library();
-  if ($lib) {
-    // add library
-    drupal_add_js($lib);
-    // add module script
-    drupal_add_js(drupal_get_path('module', 'leavenotice').'/leavenotice-drupal.js');
-    // add css media query
-    $css_selector = variable_get('leavenotice_css_selector', leavenotice_CSS_SELECTOR);
-    // add default state
-    $css = ".leavenotice { display: none; }
-      ". $css_selector ." { display: block; }";
-    drupal_add_css($css, array('type' => 'inline'));
-    $media_query = variable_get('leavenotice_media_query',  leavenotice_MEDIA_QUERY);
-    // add media query
-    $css = ".leavenotice { display: block; }
-      ". $css_selector ." { display: none; }";
-    drupal_add_css($css, array('type' => 'inline', 'media' => $media_query));
-    // Add drupal settings
-    $header = variable_get('leavenotice_header', leavenotice_HEADER);
-    $active_class = variable_get('leavenotice_active_class', leavenotice_ACTIVE_CLASS);
-
-    drupal_add_js(array(
-      'leavenotice' => array(
-        'selector' => $css_selector,
-        'media_query' => $media_query,
-        'header' => $header ? TRUE : FALSE,
-        'active' => $active_class,
-      )),
-      'setting');
-  }
+function leavenotice_page_build() {
+  $path = drupal_get_path('module', 'leavenotice');
+  drupal_add_css($path .'/css/jquery.leaveNotice.css', array('every_page' => TRUE));
+  drupal_add_js($path .'/js/jquery.leaveNotice.min.js', array('every_page' => TRUE));
+  drupal_add_js(array('leavenotice' => array(
+    'selector'     => variable_get('css_selector', 'body'),
+  )), 'setting');
 }
 
-/**
- * Wrapper to get the library so it works with install profiles.
- */
-function leavenotice_get_library() {
-  if (function_exists('libraries_get_libraries')) {
-    $libraries = libraries_get_libraries();
-    if (isset($libraries['leavenotice'])) {
-      return $libraries['leavenotice'] .'/js/jquery.leaveNotice.min.js';
-    }
-  }
-  else {
-    $directory = 'libraries';
-    $profile = drupal_get_profile();
-    $config = conf_path();
-    $lib = 'leavenotice/js/jquery.leaveNotice.min.js';
-    // look in install profile
-    if (file_exists("profiles/$profile/$directory/$lib")) {
-      return "profiles/$profile/$directory/$lib";
-    }
-    // look in sites all
-    // Always search sites/all/*.
-    $searchdir[] = 'sites/all/' . $directory ;
-    if (file_exists("sites/all/$directory/$lib")) {
-      return "sites/all/$directory/$lib";
-    }
-    // look in a local domain as last resort
-    // Also search sites/<domain>/*.
-    if (file_exists("$config/$directory/$lib")) {
-      return "$config/$directory/$lib";
-    }
-  }
-  // if library not in use, use the authorized fork
-  return drupal_get_path('module', 'leavenotice') .'/js/jquery.leaveNotice.min.js';
-}
 
 /**
  * Implements hook_menu().
  */
 function leavenotice_menu() {
   $items = array();
-  $items['admin/config/user-interface/leavenotice'] = array(
+  $items['admin/settings/leavenotice'] = array(
     'title' => 'leavenotice.js',
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_get_form',
@@ -112,38 +55,21 @@ function leavenotice_form($form, $form_state) {
   $form = array();
   $form['leavenotice_css_selector'] = array(
     '#required' => FALSE,
-    '#default_value' => variable_get('leavenotice_css_selector', leavenotice_CSS_SELECTOR),
-    '#description' => t('CSS / jQuery selector to apply the tiny nav effect to.  Use a comma for multiple selectors.'),
+    '#size' => 32,
+    '#default_value' => variable_get('leavenotice_css_selector', leavenotice_css_selector),
+    '#description' => t('CSS/jQuery That the leave notice will apply to. Body will get everything, but may be slow on large DOMs'),
     '#weight' => 0,
     '#type' => 'textfield',
     '#title' => t('CSS / jQuery selector'),
   );
-  $form['leavenotice_active_class'] = array(
-    '#default_value' => variable_get('leavenotice_active_class', leavenotice_ACTIVE_CLASS),
-    '#description' => t('Set the "active" class'),
-    '#size' => '6',
-    '#required' => FALSE,
-    '#weight' => 1,
-    '#type' => 'textfield',
-    '#title' => t('Active class'),
+  $form['leavenotice_exitmessage'] = array(
+    '#type' => 'textarea',
+    '#title' => t('This is the text you want to show in the pop-up when someone clicks on an external link. Use {SITENAME} for your site, or {URL} for the site that was clicked on.'),
+    '#rows' => 3,
+    '#default_value' => variable_get('leavenotice_exitmessage', '<p><strong>You have requested a website outside of {SITENAME}.</strong></p><p>Thank you for visiting.</p>'),
+    '#wysiwyg' => false,
   );
-  $form['leavenotice_header'] = array(
-    '#weight' => 2,
-    '#required' => FALSE,
-    '#key_type_toggled' => TRUE,
-    '#description' => t('Show header instead of the active item'),
-    '#type' => 'checkbox',
-    '#default_value' => variable_get('leavenotice_header', leavenotice_HEADER),
-    '#title' => t('Header'),
-  );
-  $form['leavenotice_media_query'] = array(
-    '#required' => FALSE,
-    '#default_value' => variable_get('leavenotice_media_query', leavenotice_MEDIA_QUERY),
-    '#description' => t('Supply a media query for the criteria when it should switch between the normal menu and tiny nav.'),
-    '#weight' => 0,
-    '#type' => 'textfield',
-    '#title' => t('Media Query'),
-  );
+
   return system_settings_form($form);
 }
 
@@ -152,105 +78,13 @@ function leavenotice_form($form, $form_state) {
  */
 function leavenotice_variable_info($options) {
   $variables = array();
-  $variables['leavenotice_header'] = array(
-    'name' => 'leavenotice_header',
-    'title' => 'Header',
-    'type' => 'options',
-    'default' => leavenotice_HEADER,
-    'group' => 'leavenotice',
-    'module' => 'leavenotice',
-  );
-  $variables['leavenotice_active_class'] = array(
-    'name' => 'leavenotice_active_class',
-    'title' => 'Active class',
-    'type' => 'string',
-    'default' => leavenotice_ACTIVE_CLASS,
-    'group' => 'leavenotice',
-    'module' => 'leavenotice',
-  );
   $variables['leavenotice_css_selector'] = array(
     'name' => 'leavenotice_css_selector',
     'title' => 'CSS selector',
     'type' => 'string',
-    'default' => leavenotice_CSS_SELECTOR,
-    'group' => 'leavenotice',
-    'module' => 'leavenotice',
-  );
-  $variables['leavenotice_media_query'] = array(
-    'name' => 'leavenotice_media_query',
-    'title' => 'Media query',
-    'type' => 'unknown',
-    'default' =>  leavenotice_MEDIA_QUERY,
+    'default' => leavenotice_css_selector,
     'group' => 'leavenotice',
     'module' => 'leavenotice',
   );
   return $variables;
-}
-
-/**
- * Implements hook_variable_group_info().
- */
-function leavenotice_variable_group_info() {
-  $groups = array();
-
-  $groups['leavenotice'] = array(
-    'title' => 'leavenotice',
-    'description' => 'This project provides an way of implementing leavenotice.js ('. l(leavenotice_URL, leavenotice_URL) .') as a library for use with any theme.',
-    'path' => 'admin/user-interface/leavenotice',
-    'access' => 'administer site configuration',
-  );
-
-  return $groups;
-}
-/**
- * Implements hook_requirements().
- */
-function leavenotice_requirements($phase) {
-  // Create an array to hold leavenotice requirements
-  $requirements = array();
-
-  // Check requirements during the runtime phase
-  if ($phase == 'runtime') {
-    // Check if the leavenotice jQuery plugin library is installed
-    if (($library = libraries_detect('leavenotice')) && !empty($library['installed'])) {
-      $requirements['leavenotice_library'] = array(
-        'title' => t('leaveNotice jQuery plugin'),
-        'value' => t('Installed'),
-        'severity' => REQUIREMENT_OK,
-      );
-    }
-    else {
-      $requirements['leavenotice_library'] = array(
-        'title' => t('leaveNotice jQuery plugin'),
-        'value' => t('Not installed'),
-        'description' => $library['error message'],
-        'severity' => REQUIREMENT_ERROR,
-      );
-    }
-  }
-
-  return $requirements;
-}
-
-
-/**
- * Implements hook_libraries_info()
- */
-function leavenotice_libraries_info() {
-  $libraries = array();
-  $libraries['leavenotice'] = array(
-    'name'              => 'leaveNotice',
-    'vendor url'        => 'http://rewdy.com/projects/view/leavenotice/',
-    'download url'      => 'https://github.com/rewdy/leaveNotice',
-    'path'              => 'js',
-    'files'   => array(
-      'js' => array(
-        'jquery.leaveNotice.min.js',
-      ),
-      'css' => array(
-        'jquery.leaveNotice.css',
-      )
-    ),
-  );
-  return $libraries;
 }
