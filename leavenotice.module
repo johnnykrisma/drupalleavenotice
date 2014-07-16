@@ -27,6 +27,7 @@ function leavenotice_page_build() {
   $path = drupal_get_path('module', 'leavenotice');
   drupal_add_css($path .'/css/jquery.leaveNotice.css', array('every_page' => TRUE));
   drupal_add_js($path .'/js/jquery.leaveNotice.min.js', array('every_page' => TRUE));
+  drupal_add_js($path .'/js/mattexample.js', array('every_page' => TRUE));
   drupal_add_js(array('leavenotice' => array(
     'selector'     => variable_get('css_selector', 'body'),
   )), 'setting');
