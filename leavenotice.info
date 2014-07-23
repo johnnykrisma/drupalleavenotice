@@ -1,6 +1,8 @@
 name = LeaveNotice
 description = Designed to implement a site-wide modal dialog box to let users know they are leaving your site.
 core = 7.x
-files[] = leavenotice.module
+version = 7.x-1.x
+package = User interface
+configure = admin/config/user-interface/leavenotice
 
 dependencies[] = libraries

@@ -7,19 +7,6 @@
  * leaving the site
  */
 
-// leavenotice global variables
-define('leavenotice_url', 'http://rewdy.com/projects/view/leavenotice/');
-define('leavenotice_sitename', 'my site');
-define('leavenotice_css_selector', 'body');
-define('leavenotice_newwindow', '');
-define('leavenotice_exitmessage', '');
-define('leavenotice_linkstring', '');
-define('leavenotice_timeout', '');
-define('leavenotice_overlayid', '');
-define('leavenotice_messageboxid', '');
-define('leavenotice_messageholderid', '');
-define('leavenotice_overlayalpha', '');
-
 /**
  * Implements hook_page_build().
  */
@@ -27,8 +14,9 @@ function leavenotice_page_build() {
   $path = drupal_get_path('module', 'leavenotice');
   drupal_add_css($path .'/css/jquery.leaveNotice.css', array('every_page' => TRUE));
   drupal_add_js($path .'/js/jquery.leaveNotice.min.js', array('every_page' => TRUE));
+  drupal_add_js($path .'/js/mattexample.js', array('every_page' => TRUE));
   drupal_add_js(array('leavenotice' => array(
-    'selector'     => variable_get('css_selector', 'body'),
+    'selector' => variable_get('leavenotice_css_selector', '[rel="external"]'),
   )), 'setting');
 }
 
@@ -37,41 +25,23 @@ function leavenotice_page_build() {
  * Implements hook_menu().
  */
 function leavenotice_menu() {
-  $items = array();
-  $items['admin/settings/leavenotice'] = array(
-    'title' => 'leavenotice.js',
-    'type' => MENU_NORMAL_ITEM,
+   $items['admin/config/user-interface/leavenotice'] = array(
+    'title' => 'LeaveNotice Configuration',
+    'description' => 'LeaveNotice Configuration Page',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('leavenotice_form'),
-    'access arguments' => array('administer site configuration'),
+    'page arguments' => array('leavenotice_admin_settings_form'),
+    'file' => 'leavenotice.admin.inc',
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'theme callback' => 'variable_get',
+    'theme arguments' => array('admin_theme'),
+    'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
+    'weight' => 9
   );
+
   return $items;
 }
 
-/**
- * Page callback for leavenotice.
- */
-function leavenotice_form($form, $form_state) {
-  $form = array();
-  $form['leavenotice_css_selector'] = array(
-    '#required' => FALSE,
-    '#size' => 32,
-    '#default_value' => variable_get('leavenotice_css_selector', leavenotice_css_selector),
-    '#description' => t('CSS/jQuery That the leave notice will apply to. Body will get everything, but may be slow on large DOMs'),
-    '#weight' => 0,
-    '#type' => 'textfield',
-    '#title' => t('CSS / jQuery selector'),
-  );
-  $form['leavenotice_exitmessage'] = array(
-    '#type' => 'textarea',
-    '#title' => t('This is the text you want to show in the pop-up when someone clicks on an external link. Use {SITENAME} for your site, or {URL} for the site that was clicked on.'),
-    '#rows' => 3,
-    '#default_value' => variable_get('leavenotice_exitmessage', '<p><strong>You have requested a website outside of {SITENAME}.</strong></p><p>Thank you for visiting.</p>'),
-    '#wysiwyg' => false,
-  );
-
-  return system_settings_form($form);
-}
 
 /**
  * Implements hook_variable_info().
